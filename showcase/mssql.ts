@@ -4,9 +4,21 @@ import type { Suite } from "./shared.ts";
 
 interface User { id: number; name: string; email: string; age: number | null; }
 
-export async function showcaseMssql(url: string): Promise<Suite> {
+export interface MssqlOptions {
+  host?: string;
+  port?: number;
+  database?: string;
+  user?: string;
+  password?: string;
+}
+
+export async function showcaseMssql(options: MssqlOptions): Promise<Suite> {
   const db = createConnection(new MssqlAdapter({
-    auth: { type: "connection-string", url },
+    host: options.host ?? "localhost",
+    port: options.port ?? 1433,
+    database: options.database ?? "master",
+    user: options.user ?? "sa",
+    password: options.password ?? "Password123!",
     trustServerCertificate: true,
   }));
 
@@ -74,7 +86,6 @@ export async function showcaseMssql(url: string): Promise<Suite> {
       name: "cleanup",
       fn: async () => {
         await db.execute(sql`DROP TABLE squn_showcase_users`);
-        await db.close();
       },
     },
   ]);

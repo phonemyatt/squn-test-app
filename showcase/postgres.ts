@@ -42,7 +42,7 @@ export async function showcasePostgres(url: string): Promise<Suite> {
       name: "queryScalar",
       fn: async () => {
         const count = await db.queryScalar<number>(sql`SELECT COUNT(*) FROM squn_showcase_users`);
-        assert(count === 1, `expected count 1, got ${count}`);
+        assert(Number(count) === 1, `expected count 1, got ${count}`);
       },
     },
     {
@@ -54,7 +54,7 @@ export async function showcasePostgres(url: string): Promise<Suite> {
         ];
         await db.executeBatch(sql`INSERT INTO squn_showcase_users (name, email, age) VALUES (@name, @email, @age)`, rows);
         const count = await db.queryScalar<number>(sql`SELECT COUNT(*) FROM squn_showcase_users`);
-        assert(count === 3, `expected count 3, got ${count}`);
+        assert(Number(count) === 3, `expected count 3, got ${count}`);
       },
     },
     {
@@ -71,7 +71,6 @@ export async function showcasePostgres(url: string): Promise<Suite> {
       name: "cleanup",
       fn: async () => {
         await db.execute(sql`DROP TABLE squn_showcase_users`);
-        await db.close();
       },
     },
   ]);

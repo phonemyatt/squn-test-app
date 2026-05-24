@@ -10,8 +10,13 @@ const PG_URL =
   process.env["PG_URL"] ?? "postgresql://postgres:password@localhost:5432/squn_test";
 const MYSQL_URL =
   process.env["MYSQL_URL"] ?? "mysql://root:password@localhost:3306/squn_test";
-const MSSQL_URL =
-  process.env["MSSQL_URL"] ?? "mssql://sa:Password123!@localhost:1433/master";
+
+// MSSQL uses individual options to avoid URL-encoding issues with special chars in password
+const MSSQL_HOST = process.env["MSSQL_HOST"] ?? "localhost";
+const MSSQL_PORT = Number(process.env["MSSQL_PORT"] ?? "1433");
+const MSSQL_DB = process.env["MSSQL_DB"] ?? "master";
+const MSSQL_USER = process.env["MSSQL_USER"] ?? "sa";
+const MSSQL_PASSWORD = process.env["MSSQL_PASSWORD"] ?? "Password123!";
 
 // Set SKIP_DOCKER=1 in CI — GitHub Actions services replace docker compose lifecycle
 const SKIP_DOCKER = process.env["SKIP_DOCKER"] === "1";
@@ -154,7 +159,13 @@ async function main(): Promise<void> {
   }
 
   try {
-    const mssqlSuite = await showcaseMssql(MSSQL_URL);
+    const mssqlSuite = await showcaseMssql({
+      host: MSSQL_HOST,
+      port: MSSQL_PORT,
+      database: MSSQL_DB,
+      user: MSSQL_USER,
+      password: MSSQL_PASSWORD,
+    });
     suites.push(mssqlSuite);
   } catch (err) {
     console.error("\nMSSQL showcase threw unexpectedly:", err);

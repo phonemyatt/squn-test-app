@@ -71,7 +71,6 @@ export async function showcaseMysql(url: string): Promise<Suite> {
       name: "cleanup",
       fn: async () => {
         await db.execute(sql`DROP TABLE squn_showcase_users`);
-        await db.close();
       },
     },
   ]);

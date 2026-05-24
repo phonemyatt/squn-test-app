@@ -6,6 +6,9 @@
   "scripts": {
     "showcase:all": "bun run showcase-all.ts"
   },
+  "dependencies": {
+    "mssql": ">=10"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

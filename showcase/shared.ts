@@ -22,7 +22,12 @@ export async function runSuite(adapter: string, cases: TestCase[]): Promise<Suit
       passed++;
     } catch (err) {
       console.error(`  ✗ ${name}`);
-      console.error(`    ${err instanceof Error ? err.message : String(err)}`);
+      if (err instanceof Error) {
+        console.error(`    ${err.message}`);
+        if (err.cause instanceof Error) console.error(`    cause: ${err.cause.message}`);
+      } else {
+        console.error(`    ${String(err)}`);
+      }
       failed++;
     }
   }
