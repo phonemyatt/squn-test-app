@@ -24,12 +24,14 @@ jobs:
 
       mysql:
         image: mysql:8.0
-        # --default-authentication-plugin must be a MySQL server arg, not a Docker
-        # flag — putting it in `options:` causes Docker exit code 125 because Docker
-        # does not recognise it as a valid `docker create` option.  Using `command:`
-        # places it after the image name in the generated `docker create` call so
-        # MySQL receives it as a startup argument instead.
-        command: --default-authentication-plugin=mysql_native_password
+        # Both flags must go in `command:` (after the image name in `docker create`),
+        # not in `options:` (which would be passed as Docker flags and fail with exit 125).
+        # --default-authentication-plugin: lets Bun's SQL client authenticate via the
+        #   legacy mysql_native_password plugin (caching_sha2_password is unsupported).
+        # --skip-ssl: disables TLS on the MySQL server so Bun's MySQL client doesn't
+        #   attempt a TLS handshake that it cannot complete, which would close the
+        #   connection before any query runs.
+        command: --default-authentication-plugin=mysql_native_password --skip-ssl
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: squn_test
