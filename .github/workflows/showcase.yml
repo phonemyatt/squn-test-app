@@ -23,18 +23,17 @@ jobs:
           --health-retries 15
 
       mysql:
-        image: mysql:8.0
-        # --default-authentication-plugin must go in `command:` (placed after the image
-        # name in `docker create`), not in `options:` (which would be passed as Docker
-        # flags and fail with exit code 125).
-        command: --default-authentication-plugin=mysql_native_password
+        # mysql:5.7 uses mysql_native_password by default and has a simpler handshake
+        # than 8.0 — isolating whether Bun.SQL's MySQL parser breaks on 8.0-specific
+        # handshake fields (caching_sha2_password capability, new capability flags).
+        image: mysql:5.7
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: squn_test
         ports:
           - 3306:3306
         options: >-
-          --health-cmd "mysqladmin ping -h localhost -ppassword"
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -ppassword"
           --health-interval 2s
           --health-timeout 5s
           --health-retries 15
@@ -81,7 +80,7 @@ jobs:
         env:
           SKIP_DOCKER: "1"
           PG_URL: postgresql://postgres:password@localhost:5432/squn_test
-          MYSQL_URL: mysql://root:password@localhost:3306/squn_test
+          MYSQL_URL: mysql://root:password@127.0.0.1:3306/squn_test
           MSSQL_HOST: localhost
           MSSQL_PORT: "1433"
           MSSQL_DB: master
