@@ -24,14 +24,10 @@ jobs:
 
       mysql:
         image: mysql:8.0
-        # Both flags must go in `command:` (after the image name in `docker create`),
-        # not in `options:` (which would be passed as Docker flags and fail with exit 125).
-        # --default-authentication-plugin: lets Bun's SQL client authenticate via the
-        #   legacy mysql_native_password plugin (caching_sha2_password is unsupported).
-        # --skip-ssl: disables TLS on the MySQL server so Bun's MySQL client doesn't
-        #   attempt a TLS handshake that it cannot complete, which would close the
-        #   connection before any query runs.
-        command: --default-authentication-plugin=mysql_native_password --skip-ssl
+        # --default-authentication-plugin must go in `command:` (placed after the image
+        # name in `docker create`), not in `options:` (which would be passed as Docker
+        # flags and fail with exit code 125).
+        command: --default-authentication-plugin=mysql_native_password
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: squn_test
@@ -68,14 +64,14 @@ jobs:
       - name: Clone squn
         run: git clone --depth=1 https://github.com/phonemyatt/squn.git "$GITHUB_WORKSPACE/../squn"
 
-      # Bun.SQL defaults to attempting TLS for MySQL connections.  The MysqlAdapter
-      # in squn doesn't expose a tls option, so we patch the cloned source to add
-      # tls: false to every SQL constructor call in the MySQL adapter.  This prevents
-      # the "Connection closed" error that occurs when Bun tries to negotiate TLS
-      # with a MySQL server that has --skip-ssl set.
-      - name: Patch squn MySQL adapter (disable TLS)
+      # Bun.SQL correctly attempts TLS when MySQL advertises it, but rejects MySQL's
+      # default self-signed certificate (rejectUnauthorized: true by default).  The
+      # MysqlAdapter in squn doesn't expose a tls option, so we patch the cloned
+      # source to accept self-signed certs in CI.  This keeps TLS active (correct
+      # behaviour) while allowing the ephemeral CI certificate to be trusted.
+      - name: Patch squn MySQL adapter (accept self-signed cert in CI)
         run: |
-          sed -i 's/new SQL({/new SQL({ tls: false,/g' \
+          sed -i 's/new SQL({/new SQL({ tls: { rejectUnauthorized: false },/g' \
             "$GITHUB_WORKSPACE/../squn/src/adapters/mysql.ts"
 
       - name: Install dependencies
