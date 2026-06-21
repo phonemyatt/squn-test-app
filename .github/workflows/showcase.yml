@@ -1,0 +1,82 @@
+name: Showcase
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  showcase:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: squn_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+
+      mysql:
+        image: mysql:8.0
+        # --default-authentication-plugin must be a MySQL server arg, not a Docker
+        # flag — putting it in `options:` causes Docker exit code 125 because Docker
+        # does not recognise it as a valid `docker create` option.  Using `command:`
+        # places it after the image name in the generated `docker create` call so
+        # MySQL receives it as a startup argument instead.
+        command: --default-authentication-plugin=mysql_native_password
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: squn_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -ppassword"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: Password123!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Password123!' -Q 'SELECT 1' -No"
+          --health-interval 5s
+          --health-timeout 10s
+          --health-retries 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # squn is resolved via tsconfig paths: "squn" → "../squn/src/index.ts".
+      # Clone it as a sibling so that relative path resolves at runtime.
+      - name: Clone squn
+        run: git clone --depth=1 https://github.com/phonemyatt/squn.git "$GITHUB_WORKSPACE/../squn"
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run showcase
+        env:
+          SKIP_DOCKER: "1"
+          PG_URL: postgresql://postgres:password@localhost:5432/squn_test
+          MYSQL_URL: mysql://root:password@localhost:3306/squn_test
+          MSSQL_HOST: localhost
+          MSSQL_PORT: "1433"
+          MSSQL_DB: master
+          MSSQL_USER: sa
+          MSSQL_PASSWORD: Password123!
+        run: bun run showcase:all
