@@ -194,6 +194,7 @@ async function main(): Promise<void> {
   }
 
   console.log("\nAll tests passed.");
+  process.exit(0);
 }
 
 main().catch((err) => {
