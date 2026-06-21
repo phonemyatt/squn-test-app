@@ -7,7 +7,8 @@
     "showcase:all": "bun run showcase-all.ts"
   },
   "dependencies": {
-    "mssql": ">=10"
+    "mssql": ">=10",
+    "mysql2": ">=3"
   },
   "devDependencies": {
     "@types/bun": "latest"
