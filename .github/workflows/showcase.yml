@@ -61,6 +61,11 @@ jobs:
         with:
           bun-version: latest
 
+      # squn is resolved via tsconfig paths: "squn" → "../squn/src/index.ts".
+      # Clone it as a sibling so that relative path resolves at runtime.
+      - name: Clone squn
+        run: git clone --depth=1 https://github.com/phonemyatt/squn.git "$GITHUB_WORKSPACE/../squn"
+
       - name: Install dependencies
         run: bun install
 
