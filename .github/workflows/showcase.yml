@@ -63,14 +63,16 @@ jobs:
       - name: Clone squn
         run: git clone --depth=1 https://github.com/phonemyatt/squn.git "$GITHUB_WORKSPACE/../squn"
 
-      # Bun.SQL correctly attempts TLS when MySQL advertises it, but rejects MySQL's
-      # default self-signed certificate (rejectUnauthorized: true by default).  The
-      # MysqlAdapter in squn doesn't expose a tls option, so we patch the cloned
-      # source to accept self-signed certs in CI.  This keeps TLS active (correct
-      # behaviour) while allowing the ephemeral CI certificate to be trusted.
-      - name: Patch squn MySQL adapter (accept self-signed cert in CI)
+      # Bun.SQL attempts TLS when MySQL advertises it, but the TLS handshake fails
+      # in CI: MySQL 5.7 uses cipher suites / TLS versions that BoringSSL (Bun's
+      # TLS stack) rejects at the protocol level — before any certificate check.
+      # rejectUnauthorized: false only skips cert validation, not the handshake.
+      # The only reliable CI workaround is tls: false (skip TLS entirely).
+      # MySQL 5.7's mysql_native_password auth does not require TLS, so this is
+      # safe for the ephemeral localhost CI environment.
+      - name: Patch squn MySQL adapter (disable TLS in CI)
         run: |
-          sed -i 's/new SQL({/new SQL({ tls: { rejectUnauthorized: false },/g' \
+          sed -i 's/new SQL({/new SQL({ tls: false,/g' \
             "$GITHUB_WORKSPACE/../squn/src/adapters/mysql.ts"
 
       - name: Install dependencies
