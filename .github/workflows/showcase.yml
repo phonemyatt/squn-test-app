@@ -45,11 +45,13 @@ jobs:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           ACCEPT_EULA: Y
-          MSSQL_SA_PASSWORD: Password123!
+          # SA_PASSWORD is the env var the MSSQL Docker image reads; MSSQL_SA_PASSWORD is wrong
+          SA_PASSWORD: Password123!
+          MSSQL_PID: Developer
         ports:
           - 1433:1433
         options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Password123!' -Q 'SELECT 1' -No"
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Password123!' -Q 'SELECT 1' -C -b"
           --health-interval 5s
           --health-timeout 10s
           --health-retries 15
@@ -73,7 +75,10 @@ jobs:
         env:
           SKIP_DOCKER: "1"
           PG_URL: postgresql://postgres:password@localhost:5432/squn_test
-          MYSQL_URL: mysql://root:password@localhost:3306/squn_test
+          # Use 127.0.0.1 explicitly: on some Linux runners "localhost" resolves to
+          # ::1 (IPv6) while the container only binds on IPv4, causing Bun's MySQL
+          # driver to get an immediate "Connection closed" instead of a TCP refusal.
+          MYSQL_URL: mysql://root:password@127.0.0.1:3306/squn_test
           MSSQL_HOST: localhost
           MSSQL_PORT: "1433"
           MSSQL_DB: master
