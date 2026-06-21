@@ -75,7 +75,7 @@ jobs:
         env:
           SKIP_DOCKER: "1"
           PG_URL: postgresql://postgres:password@localhost:5432/squn_test
-          MYSQL_URL: mysql://root:password@localhost:3306/squn_test
+          MYSQL_URL: mysql://root:password@127.0.0.1:3306/squn_test
           MSSQL_HOST: localhost
           MSSQL_PORT: "1433"
           MSSQL_DB: master
