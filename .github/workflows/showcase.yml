@@ -24,17 +24,18 @@ jobs:
 
       mysql:
         image: mysql:8.0
-        # Both flags must go in `command:` (after the image name in `docker create`),
-        # not in `options:` (which would be passed as Docker flags and fail with exit 125).
-        # --default-authentication-plugin: lets Bun's SQL client authenticate via the
-        #   legacy mysql_native_password plugin (caching_sha2_password is unsupported).
-        # --skip-ssl: disables TLS on the MySQL server so Bun's MySQL client doesn't
-        #   attempt a TLS handshake that it cannot complete, which would close the
-        #   connection before any query runs.
+        # --default-authentication-plugin=mysql_native_password: the MySQL 8.0 Docker image
+        # creates root@% with caching_sha2_password explicitly (ignoring this flag), so we
+        # connect as the MYSQL_USER instead. That user is created via
+        # `CREATE USER ... IDENTIFIED BY ...` (no explicit plugin), which DOES respect
+        # --default-authentication-plugin and therefore gets mysql_native_password — the only
+        # auth plugin Bun's MySQL client can use without TLS/RSA key exchange.
         command: --default-authentication-plugin=mysql_native_password --skip-ssl
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: squn_test
+          MYSQL_USER: squn
+          MYSQL_PASSWORD: password
         ports:
           - 3306:3306
         options: >-
@@ -75,7 +76,7 @@ jobs:
         env:
           SKIP_DOCKER: "1"
           PG_URL: postgresql://postgres:password@localhost:5432/squn_test
-          MYSQL_URL: mysql://root:password@localhost:3306/squn_test
+          MYSQL_URL: mysql://squn:password@127.0.0.1:3306/squn_test
           MSSQL_HOST: localhost
           MSSQL_PORT: "1433"
           MSSQL_DB: master
