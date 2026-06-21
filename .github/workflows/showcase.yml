@@ -68,6 +68,16 @@ jobs:
       - name: Clone squn
         run: git clone --depth=1 https://github.com/phonemyatt/squn.git "$GITHUB_WORKSPACE/../squn"
 
+      # Bun.SQL defaults to attempting TLS for MySQL connections.  The MysqlAdapter
+      # in squn doesn't expose a tls option, so we patch the cloned source to add
+      # tls: false to every SQL constructor call in the MySQL adapter.  This prevents
+      # the "Connection closed" error that occurs when Bun tries to negotiate TLS
+      # with a MySQL server that has --skip-ssl set.
+      - name: Patch squn MySQL adapter (disable TLS)
+        run: |
+          sed -i 's/new SQL({/new SQL({ tls: false,/g' \
+            "$GITHUB_WORKSPACE/../squn/src/adapters/mysql.ts"
+
       - name: Install dependencies
         run: bun install
 
